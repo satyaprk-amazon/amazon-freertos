@@ -98,7 +98,7 @@
 /**
  * @brief The timeout for MQTT operations in this demo.
  */
-#define MQTT_TIMEOUT_MS                          ( 5000 )
+#define MQTT_TIMEOUT_MS                          ( 20000 )
 
 /**
  * @brief The Last Will and Testament topic name in this demo.
@@ -177,6 +177,9 @@
  */
 #define ACKNOWLEDGEMENT_MESSAGE_BUFFER_LENGTH    ( sizeof( ACKNOWLEDGEMENT_MESSAGE_FORMAT ) + 2 )
 
+uint32_t ulPubCallbackCounter = 0;
+uint32_t ulAckCallbackCounter = 0;
+
 /*-----------------------------------------------------------*/
 
 /* Declaration of demo function. */
@@ -209,6 +212,7 @@ static void _operationCompleteCallback( void * param1,
      * successful when transmitted over the network. */
     if( pOperation->u.operation.result == IOT_MQTT_SUCCESS )
     {
+        ulPubCallbackCounter |= ( 1 << publishCount );
         IotLogInfo( "MQTT %s %d successfully sent.",
                     IotMqtt_OperationType( pOperation->u.operation.type ),
                     ( int ) publishCount );
@@ -240,12 +244,14 @@ static void _mqttSubscriptionCallback( void * param1,
 {
     int acknowledgementLength = 0;
     size_t messageNumberIndex = 0, messageNumberLength = 1;
+    uint32_t ulWhichMessage = 0;
     IotSemaphore_t * pPublishesReceived = ( IotSemaphore_t * ) param1;
     const char * pPayload = pPublish->u.message.info.pPayload;
     char pAcknowledgementMessage[ ACKNOWLEDGEMENT_MESSAGE_BUFFER_LENGTH ] = { 0 };
     IotMqttPublishInfo_t acknowledgementInfo = IOT_MQTT_PUBLISH_INFO_INITIALIZER;
 
     /* Print information about the incoming PUBLISH message. */
+    /*
     IotLogInfo( "Incoming PUBLISH received:\r\n"
                 "Subscription topic filter: %.*s\r\n"
                 "Publish topic name: %.*s\r\n"
@@ -259,8 +265,8 @@ static void _mqttSubscriptionCallback( void * param1,
                 pPublish->u.message.info.retain,
                 pPublish->u.message.info.qos,
                 pPublish->u.message.info.payloadLength,
-                pPayload );
-
+                pPayload );*/
+    
     /* Find the message number inside of the PUBLISH message. */
     for( messageNumberIndex = 0; messageNumberIndex < pPublish->u.message.info.payloadLength; messageNumberIndex++ )
     {
@@ -283,7 +289,18 @@ static void _mqttSubscriptionCallback( void * param1,
         {
             messageNumberLength++;
         }
-
+        
+        ulWhichMessage = strtol( pPayload + messageNumberIndex, NULL, 10 );
+        if( 0 != ulWhichMessage )
+        {
+            if( 0 == ( ulAckCallbackCounter & ( 1 << ( ulWhichMessage - 1 ) ) ) )
+            {
+                ulAckCallbackCounter |= ( 1 << ( ulWhichMessage - 1 ) );
+                /* Increment the number of PUBLISH messages received. */
+                IotSemaphore_Post( pPublishesReceived );
+            }
+        }
+        
         /* Generate an acknowledgement message. */
         acknowledgementLength = snprintf( pAcknowledgementMessage,
                                           ACKNOWLEDGEMENT_MESSAGE_BUFFER_LENGTH,
@@ -321,21 +338,16 @@ static void _mqttSubscriptionCallback( void * param1,
                                  NULL,
                                  NULL ) == IOT_MQTT_STATUS_PENDING )
             {
-                IotLogInfo( "Acknowledgment message for PUBLISH %.*s will be sent.",
-                            ( int ) messageNumberLength,
-                            pPayload + messageNumberIndex );
+                IotLogInfo( "ACK: %s.",
+                            pAcknowledgementMessage );
             }
             else
             {
-                IotLogWarn( "Acknowledgment message for PUBLISH %.*s will NOT be sent.",
-                            ( int ) messageNumberLength,
-                            pPayload + messageNumberIndex );
+                IotLogWarn( "Acknowledgment failed: %s.",
+                            pAcknowledgementMessage );
             }
         }
     }
-
-    /* Increment the number of PUBLISH messages received. */
-    IotSemaphore_Post( pPublishesReceived );
 }
 
 /*-----------------------------------------------------------*/
@@ -653,7 +665,7 @@ static int _publishAllMessages( IotMqttConnection_t mqttConnection,
         status = snprintf( pPublishPayload,
                            PUBLISH_PAYLOAD_BUFFER_LENGTH,
                            PUBLISH_PAYLOAD_FORMAT,
-                           ( int ) publishCount );
+                           ( int ) publishCount + 1 );
 
         /* Check for errors from snprintf. */
         if( status < 0 )
@@ -702,7 +714,8 @@ static int _publishAllMessages( IotMqttConnection_t mqttConnection,
                 if( IotSemaphore_TimedWait( pPublishReceivedCounter,
                                             MQTT_TIMEOUT_MS ) == false )
                 {
-                    IotLogError( "Timed out waiting for incoming PUBLISH messages." );
+                    IotLogError( "Timed out waiting for incoming PUBLISH message %d.",
+                                 publishCount + i );
                     status = EXIT_FAILURE;
                     break;
                 }
@@ -730,9 +743,9 @@ static int _publishAllMessages( IotMqttConnection_t mqttConnection,
             if( IotSemaphore_TimedWait( pPublishReceivedCounter,
                                         MQTT_TIMEOUT_MS ) == false )
             {
-                IotLogError( "Timed out waiting for incoming PUBLISH messages." );
+                IotLogError( "Timed out waiting for incoming PUBLISH message %d.",
+                             publishCount + i - 1 );
                 status = EXIT_FAILURE;
-
                 break;
             }
         }
@@ -742,6 +755,8 @@ static int _publishAllMessages( IotMqttConnection_t mqttConnection,
             IotLogInfo( "All publishes received." );
         }
     }
+
+    IotLogInfo( "PUB: %d, ACK: %d.", ulPubCallbackCounter, ulAckCallbackCounter );
 
     return status;
 }
