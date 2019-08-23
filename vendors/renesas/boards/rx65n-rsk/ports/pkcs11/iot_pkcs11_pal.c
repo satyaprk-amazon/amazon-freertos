@@ -450,32 +450,32 @@ static void update_dataflash_data_from_image(void)
         required_dataflash_block_num++;
     }
 
-    configPRINTF(("erase dataflash(main)...\r\n"));
+    //configPRINTF(("erase dataflash(main)...\r\n"));
     R_BSP_InterruptsDisable();
     flash_error_code = R_FLASH_Erase((flash_block_address_t)&pkcs_control_block_data, required_dataflash_block_num);
     R_BSP_InterruptsEnable();
     if(FLASH_SUCCESS == flash_error_code)
     {
-        configPRINTF(("OK\r\n"));
+        //configPRINTF(("OK\r\n"));
     }
     else
     {
-        configPRINTF(("NG\r\n"));
-        configPRINTF(("R_FLASH_Erase() returns error code = %d.\r\n", flash_error_code));
+        //configPRINTF(("NG\r\n"));
+        //configPRINTF(("R_FLASH_Erase() returns error code = %d.\r\n", flash_error_code));
     }
 
-    configPRINTF(("write dataflash(main)...\r\n"));
+    //configPRINTF(("write dataflash(main)...\r\n"));
     R_BSP_InterruptsDisable();
     flash_error_code = R_FLASH_Write((flash_block_address_t)&pkcs_control_block_data_image, (flash_block_address_t)&pkcs_control_block_data, FLASH_DF_BLOCK_SIZE * required_dataflash_block_num);
     R_BSP_InterruptsEnable();
     if(FLASH_SUCCESS == flash_error_code)
     {
-        configPRINTF(("OK\r\n"));
+        //configPRINTF(("OK\r\n"));
     }
     else
     {
-        configPRINTF(("NG\r\n"));
-        configPRINTF(("R_FLASH_Write() returns error code = %d.\r\n", flash_error_code));
+        //configPRINTF(("NG\r\n"));
+        //configPRINTF(("R_FLASH_Write() returns error code = %d.\r\n", flash_error_code));
         return;
     }
     return;
@@ -492,42 +492,42 @@ static void update_dataflash_data_mirror_from_image(void)
         required_dataflash_block_num++;
     }
 
-    configPRINTF(("erase dataflash(mirror)...\r\n"));
+    //configPRINTF(("erase dataflash(mirror)...\r\n"));
     R_BSP_InterruptsDisable();
     flash_error_code = R_FLASH_Erase((flash_block_address_t)&pkcs_control_block_data_mirror, required_dataflash_block_num);
     R_BSP_InterruptsEnable();
     if(FLASH_SUCCESS == flash_error_code)
     {
-        configPRINTF(("OK\r\n"));
+        //configPRINTF(("OK\r\n"));
     }
     else
     {
-        configPRINTF(("NG\r\n"));
-        configPRINTF(("R_FLASH_Erase() returns error code = %d.\r\n", flash_error_code));
+        //configPRINTF(("NG\r\n"));
+        //configPRINTF(("R_FLASH_Erase() returns error code = %d.\r\n", flash_error_code));
         return;
     }
 
-    configPRINTF(("write dataflash(mirror)...\r\n"));
+    //configPRINTF(("write dataflash(mirror)...\r\n"));
     R_BSP_InterruptsDisable();
     flash_error_code = R_FLASH_Write((flash_block_address_t)&pkcs_control_block_data_image, (flash_block_address_t)&pkcs_control_block_data_mirror, FLASH_DF_BLOCK_SIZE * required_dataflash_block_num);
     R_BSP_InterruptsEnable();
     if(FLASH_SUCCESS == flash_error_code)
     {
-        configPRINTF(("OK\r\n"));
+        //configPRINTF(("OK\r\n"));
     }
     else
     {
-        configPRINTF(("NG\r\n"));
-        configPRINTF(("R_FLASH_Write() returns error code = %d.\r\n", flash_error_code));
+        //configPRINTF(("NG\r\n"));
+        //configPRINTF(("R_FLASH_Write() returns error code = %d.\r\n", flash_error_code));
         return;
     }
     if(!memcmp(&pkcs_control_block_data, &pkcs_control_block_data_mirror, sizeof(PKCS_CONTROL_BLOCK)))
     {
-        configPRINTF(("data flash setting OK.\r\n"));
+        //configPRINTF(("data flash setting OK.\r\n"));
     }
     else
     {
-        configPRINTF(("data flash setting NG.\r\n"));
+        //configPRINTF(("data flash setting NG.\r\n"));
         return;
     }
     return;
@@ -542,32 +542,32 @@ static void check_dataflash_area(uint32_t retry_counter)
 
     if(retry_counter)
     {
-        configPRINTF(("recover retry count = %d.\r\n", retry_counter));
+        //configPRINTF(("recover retry count = %d.\r\n", retry_counter));
         if(retry_counter == MAX_CHECK_DATAFLASH_AREA_RETRY_COUNT)
         {
-            configPRINTF(("retry over the limit.\r\n"));
+            //configPRINTF(("retry over the limit.\r\n"));
             while(1);
         }
     }
-    configPRINTF(("data flash(main) hash check...\r\n"));
+    //configPRINTF(("data flash(main) hash check...\r\n"));
     mbedtls_sha256_starts_ret(&ctx, 0); /* 0 means SHA256 context */
     mbedtls_sha256_update_ret(&ctx, (unsigned char *)&pkcs_control_block_data.data, sizeof(pkcs_control_block_data.data));
     mbedtls_sha256_finish_ret(&ctx, hash_sha256);
     if(!memcmp(pkcs_control_block_data.hash_sha256, hash_sha256, sizeof(hash_sha256)))
     {
-        configPRINTF(("OK\r\n"));
-        configPRINTF(("data flash(mirror) hash check...\r\n"));
+        //configPRINTF(("OK\r\n"));
+        //configPRINTF(("data flash(mirror) hash check...\r\n"));
         mbedtls_sha256_starts_ret(&ctx, 0); /* 0 means SHA256 context */
         mbedtls_sha256_update_ret(&ctx, (unsigned char *)&pkcs_control_block_data_mirror.data, sizeof(pkcs_control_block_data_mirror.data));
         mbedtls_sha256_finish_ret(&ctx, hash_sha256);
         if(!memcmp(pkcs_control_block_data_mirror.hash_sha256, hash_sha256, sizeof(hash_sha256)))
         {
-            configPRINTF(("OK\r\n"));
+            //configPRINTF(("OK\r\n"));
         }
         else
         {
-            configPRINTF(("NG\r\n"));
-            configPRINTF(("recover mirror from main.\r\n"));
+            //configPRINTF(("NG\r\n"));
+            //configPRINTF(("recover mirror from main.\r\n"));
             memcpy(&pkcs_control_block_data_image, (void *)&pkcs_control_block_data, sizeof(pkcs_control_block_data));
             update_dataflash_data_mirror_from_image();
             check_dataflash_area(retry_counter + 1);
@@ -575,30 +575,30 @@ static void check_dataflash_area(uint32_t retry_counter)
     }
     else
     {
-        configPRINTF(("NG\r\n"));
-        configPRINTF(("data flash(mirror) hash check...\r\n"));
+        //configPRINTF(("NG\r\n"));
+        //configPRINTF(("data flash(mirror) hash check...\r\n"));
         mbedtls_sha256_starts_ret(&ctx, 0); /* 0 means SHA256 context */
         mbedtls_sha256_update_ret(&ctx, (unsigned char *)&pkcs_control_block_data_mirror.data, sizeof(pkcs_control_block_data_mirror.data));
         mbedtls_sha256_finish_ret(&ctx, hash_sha256);
         if(!memcmp(pkcs_control_block_data_mirror.hash_sha256, hash_sha256, sizeof(hash_sha256)))
         {
-            configPRINTF(("OK\r\n"));
-            configPRINTF(("recover main from mirror.\r\n"));
+            //configPRINTF(("OK\r\n"));
+            //configPRINTF(("recover main from mirror.\r\n"));
             memcpy(&pkcs_control_block_data_image, (void *)&pkcs_control_block_data_mirror, sizeof(pkcs_control_block_data_mirror));
             update_dataflash_data_from_image();
             check_dataflash_area(retry_counter + 1);
         }
         else
         {
-            configPRINTF(("NG\r\n"));
+            //configPRINTF(("NG\r\n"));
             while(1)
             {
                 vTaskDelay(10000);
-                configPRINTF(("------------------------------------------------\r\n"));
-                configPRINTF(("Data flash is completely broken.\r\n"));
-                configPRINTF(("Please erase all code flash.\r\n"));
-                configPRINTF(("And, write initial firmware using debugger/rom writer.\r\n"));
-                configPRINTF(("------------------------------------------------\r\n"));
+                //configPRINTF(("------------------------------------------------\r\n"));
+                //configPRINTF(("Data flash is completely broken.\r\n"));
+                //configPRINTF(("Please erase all code flash.\r\n"));
+                //configPRINTF(("And, write initial firmware using debugger/rom writer.\r\n"));
+                //configPRINTF(("------------------------------------------------\r\n"));
             }
         }
     }
