@@ -1037,6 +1037,7 @@ CK_RV xProvisionDevice( CK_SESSION_HANDLE xSession,
         ( CK_FALSE == xImportedPrivateKey ) )
     {
         configPRINTF( ( "Warning: no client certificate is available. Please see https://aws.amazon.com/freertos/getting-started/.\r\n" ) );
+        configPRINTF( ( "Recommended certificate subject name: %s\r\n", clientcredentialIOT_THING_NAME ) );
         xResult = prvWritePublicKeyToConsole( xSession,
                                               xProvisionedState.xPublicKey );
     }
